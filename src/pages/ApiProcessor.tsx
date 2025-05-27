@@ -1,80 +1,167 @@
-function prettifyScratchCode(raw) {
-  let code = '';
-  
-  // Step 1: Extract the actual code string from JSON structure
-  if (typeof raw === 'string') {
-    code = raw;
-  } else if (raw && typeof raw === 'object') {
-    // Handle the JSON structure: { "type": "text", "text": { "value": "..." } }
-    if (raw.text && raw.text.value) {
-      code = raw.text.value;
-    } else if (raw.value) {
-      code = raw.value;
-    } else {
-      // Try to find any string property
-      const str = JSON.stringify(raw);
-      const match = str.match(/"value"\s*:\s*"([^"]+)"/);
-      if (match) {
-        code = match[1];
-      } else {
-        code = String(raw);
-      }
-    }
-  }
-  
-  // Step 1.5: Remove JSON wrapper if it exists
-  // Look for pattern like: { "type": "text", "text": { "value": "ACTUAL_CODE" }, "annotations": [] }
-  if (code.includes('"type": "text"') && code.includes('"value":')) {
-    const match = code.match(/"value"\s*:\s*"([^"\\]*(\\.[^"\\]*)*)"/);
-    if (match) {
-      code = match[1];
-    }
-  }
-  
-  // Step 2: Remove leading numbering (like "0:")
-  code = code.replace(/^\s*\d+:\s*/, '');
-  
-  // Step 3: Handle escaped newlines and quotes
-  code = code.replace(/\\n/g, '\n');
-  code = code.replace(/\\"/g, '"');
-  
-  // Step 4: Add proper spacing around sections
-  code = code.replace(/\nextras:/g, '\n\nextras:');
-  code = code.replace(/\ndefine /g, '\n\ndefine ');
-  
-  // Step 5: Add 2-space indentation for non-top-level lines
-  const lines = code.split('\n');
-  const formattedLines = lines.map(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return ''; // Empty lines stay empty
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+
+const ApiProcessor = () => {
+  const [step1Data, setStep1Data] = useState('');
+  const [step2Function, setStep2Function] = useState('');
+  const [result, setResult] = useState('');
+  const [error, setError] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
+
+  const executeProcessor = () => {
+    setError('');
+    setResult('');
+    setDebugInfo('');
     
-    // Top-level elements (no indent)
-    if (trimmed.startsWith('Stage:') || 
-        trimmed.startsWith('Ball:') || 
-        trimmed.startsWith('define ') ||
-        trimmed.startsWith('extras:')) {
-      return trimmed;
-    }
-    
-    // Everything else gets 2 spaces
-    return '  ' + trimmed;
-  });
-  
-  // Step 6: Format JSON in extras blocks
-  let result = formattedLines.join('\n');
-  result = result.replace(/extras:\s*{([^}]+)}/g, (match, inner) => {
     try {
-      const obj = JSON.parse(`{${inner}}`);
-      const formatted = JSON.stringify(obj, null, 2);
-      // Indent the JSON lines properly
-      const indentedJson = formatted.split('\n').map((line, index) => 
-        index === 0 ? line : '  ' + line
-      ).join('\n');
-      return `extras: ${indentedJson}`;
-    } catch {
-      return match; // If JSON parsing fails, return original
+      console.log('=== EXECUTION START ===');
+      console.log('Step 1 Data:', step1Data);
+      console.log('Step 2 Function:', step2Function);
+      
+      // Parse the data safely
+      let data;
+      try {
+        data = JSON.parse(step1Data);
+        console.log('Parsed data successfully:', data);
+      } catch (parseError) {
+        // If JSON parsing fails, treat as string
+        data = step1Data;
+        console.log('Using data as string:', data);
+      }
+
+      // Create a safe execution environment
+      const safeFunction = `
+        (function() {
+          try {
+            ${step2Function}
+          } catch (error) {
+            console.error('Error in user function:', error);
+            console.error('Stack trace:', error.stack);
+            throw new Error('Function execution error: ' + error.message);
+          }
+        })();
+      `;
+
+      console.log('About to execute function...');
+      
+      // Execute the function with additional error context
+      const wrappedFunction = new Function('data', 'console', safeFunction);
+      const processedResult = wrappedFunction(data, console);
+      
+      console.log('Function executed successfully, result:', processedResult);
+      setResult(typeof processedResult === 'string' ? processedResult : JSON.stringify(processedResult, null, 2));
+      setDebugInfo('Execution completed successfully');
+      
+    } catch (executionError) {
+      console.error('=== EXECUTION ERROR ===');
+      console.error('Error:', executionError);
+      console.error('Stack:', executionError.stack);
+      
+      const errorMessage = executionError.message || 'Unknown error';
+      const isRegexError = errorMessage.includes('Invalid regular expression') || 
+                          errorMessage.includes('unmatched parentheses');
+      
+      if (isRegexError) {
+        setError(`Regex Error Detected: ${errorMessage}
+        
+This error suggests that somewhere in the execution chain, your input data (which contains unmatched parentheses like "(score)", "(10)", etc.) is being treated as a regex pattern.
+
+Debug Info:
+- Your function's regex patterns are static and valid
+- The error is likely from the JavaScript execution environment
+- Try using simpler test data without parentheses to confirm
+
+Stack trace: ${executionError.stack}`);
+      } else {
+        setError(`Execution Error: ${errorMessage}\n\nStack: ${executionError.stack}`);
+      }
+      
+      setDebugInfo(`Error type: ${executionError.name}, Message: ${errorMessage}`);
     }
-  });
-  
-  return result.trim();
-}
+  };
+
+  return (
+    <div className="container mx-auto p-6 max-w-4xl">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>API Data Processor</CardTitle>
+          <CardDescription>
+            Process API data through custom JavaScript functions with enhanced error debugging
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Step 1: Data Input */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Step 1: Input Data</h3>
+            <Textarea
+              placeholder="Enter your data (JSON or string)..."
+              value={step1Data}
+              onChange={(e) => setStep1Data(e.target.value)}
+              className="min-h-32"
+            />
+          </div>
+
+          <Separator />
+
+          {/* Step 2: Processing Function */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Step 2: Processing Function</h3>
+            <Textarea
+              placeholder="Enter your processing function (JavaScript)..."
+              value={step2Function}
+              onChange={(e) => setStep2Function(e.target.value)}
+              className="min-h-40 font-mono text-sm"
+            />
+          </div>
+
+          <Button 
+            onClick={executeProcessor}
+            className="w-full"
+            disabled={!step1Data || !step2Function}
+          >
+            Execute Processor
+          </Button>
+
+          {/* Debug Information */}
+          {debugInfo && (
+            <Alert>
+              <AlertDescription>
+                <strong>Debug:</strong> {debugInfo}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                <pre className="whitespace-pre-wrap text-sm">{error}</pre>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Result Display */}
+          {result && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Result:</h3>
+              <Card>
+                <CardContent className="p-4">
+                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded overflow-auto">
+                    {result}
+                  </pre>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ApiProcessor;
