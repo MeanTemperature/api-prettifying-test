@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Copy } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ApiProcessor = () => {
   const [step1Data, setStep1Data] = useState('');
@@ -12,6 +13,39 @@ const ApiProcessor = () => {
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
+  const { toast } = useToast();
+
+  const copyProcessSummary = () => {
+    const summary = `**API Processing Summary**
+
+**Raw Input Data:**
+\`\`\`
+${step1Data}
+\`\`\`
+
+**Processing Function:**
+\`\`\`javascript
+${step2Function}
+\`\`\`
+
+**Result:**
+\`\`\`
+${result || error || 'No result yet - function needs to be executed'}
+\`\`\``;
+
+    navigator.clipboard.writeText(summary).then(() => {
+      toast({
+        title: "Copied!",
+        description: "Processing summary copied to clipboard",
+      });
+    }).catch(() => {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
+      });
+    });
+  };
 
   const executeProcessor = () => {
     setError('');
@@ -133,13 +167,25 @@ Stack trace: ${executionError.stack}`);
             />
           </div>
 
-          <Button 
-            onClick={executeProcessor}
-            className="w-full"
-            disabled={!step1Data || !step2Function}
-          >
-            Execute Processor
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={executeProcessor}
+              className="flex-1"
+              disabled={!step1Data || !step2Function}
+            >
+              Execute Processor
+            </Button>
+            
+            <Button 
+              onClick={copyProcessSummary}
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={!step1Data || !step2Function}
+            >
+              <Copy size={16} />
+              Copy Summary
+            </Button>
+          </div>
 
           {/* Debug Information */}
           {debugInfo && (
