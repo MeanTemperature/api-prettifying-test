@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,7 +47,22 @@ const ApiProcessor = () => {
         
         processFunction = new Function('data', jsCode);
       } else {
-        // JavaScript mode - use as is
+        // JavaScript mode - but first validate regex patterns
+        const codeToValidate = processingCode;
+        
+        // Check for problematic regex patterns that might cause issues
+        const regexMatches = codeToValidate.match(/\/[^\/\n]*\/[gimuy]*/g);
+        if (regexMatches) {
+          for (const regexStr of regexMatches) {
+            try {
+              // Test if the regex is valid by creating it
+              new RegExp(regexStr.slice(1, regexStr.lastIndexOf('/')), regexStr.slice(regexStr.lastIndexOf('/') + 1));
+            } catch (regexError) {
+              throw new Error(`Invalid regular expression found: ${regexStr} - ${regexError.message}`);
+            }
+          }
+        }
+        
         processFunction = new Function('data', processingCode);
       }
       
