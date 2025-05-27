@@ -34,23 +34,18 @@ const ApiProcessor = () => {
         console.log('Using data as string:', data);
       }
 
-      // Create a safe execution environment
-      const safeFunction = `
-        (function() {
-          try {
-            ${step2Function}
-          } catch (error) {
-            console.error('Error in user function:', error);
-            console.error('Stack trace:', error.stack);
-            throw new Error('Function execution error: ' + error.message);
-          }
-        })();
+      // Better function execution approach - wrap in an IIFE that returns the result
+      const functionCode = `
+        (() => {
+          ${step2Function}
+        })()
       `;
 
       console.log('About to execute function...');
+      console.log('Function code:', functionCode);
       
-      // Execute the function with additional error context
-      const wrappedFunction = new Function('data', 'console', safeFunction);
+      // Execute the function
+      const wrappedFunction = new Function('data', 'console', `return (${functionCode})`);
       const processedResult = wrappedFunction(data, console);
       
       console.log('Function executed successfully, result:', processedResult);
