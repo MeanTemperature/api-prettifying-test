@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -90,8 +91,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -169,17 +168,26 @@ function toast({ ...props }: Toast) {
 }
 
 function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
+  // Initialize state with a safer approach
+  const [state, setState] = React.useState<State>(() => memoryState)
 
   React.useEffect(() => {
-    listeners.push(setState)
+    // Ensure we have the latest state when component mounts
+    setState(memoryState)
+    
+    const listener = (newState: State) => {
+      setState(newState)
+    }
+    
+    listeners.push(listener)
+    
     return () => {
-      const index = listeners.indexOf(setState)
+      const index = listeners.indexOf(listener)
       if (index > -1) {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
   return {
     ...state,
