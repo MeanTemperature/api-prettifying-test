@@ -54,8 +54,24 @@ const ApiProcessor = () => {
       const processedResult = wrappedFunction(data, console);
       
       console.log('Function executed successfully, result:', processedResult);
-      setResult(typeof processedResult === 'string' ? processedResult : JSON.stringify(processedResult, null, 2));
-      setDebugInfo('Execution completed successfully');
+      console.log('Result type:', typeof processedResult);
+      
+      if (processedResult === undefined) {
+        setDebugInfo('Function executed but returned undefined. Check that your function has a proper return statement.');
+        setError(`Function returned undefined. Common issues:
+
+1. Missing return statement
+2. Syntax error in function call (extra spaces, typos)
+3. Function not being called
+
+Your function should end with something like:
+return prettifyScratchCode(data);
+
+Current function type: ${typeof processedResult}`);
+      } else {
+        setResult(typeof processedResult === 'string' ? processedResult : JSON.stringify(processedResult, null, 2));
+        setDebugInfo('Execution completed successfully with result');
+      }
       
     } catch (executionError) {
       console.error('=== EXECUTION ERROR ===');
@@ -111,6 +127,9 @@ Stack trace: ${executionError.stack}`);
           {/* Step 2: Processing Function */}
           <div>
             <h3 className="text-lg font-semibold mb-2">Step 2: Processing Function</h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Make sure your function ends with a return statement, like: <code>return prettifyScratchCode(data);</code>
+            </p>
             <Textarea
               placeholder="Enter your processing function (JavaScript)..."
               value={step2Function}
