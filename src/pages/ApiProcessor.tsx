@@ -47,18 +47,38 @@ const ApiProcessor = () => {
         
         processFunction = new Function('data', jsCode);
       } else {
-        // JavaScript mode - but first validate regex patterns
+        // JavaScript mode - improved regex validation
         const codeToValidate = processingCode;
         
-        // Check for problematic regex patterns that might cause issues
-        const regexMatches = codeToValidate.match(/\/[^\/\n]*\/[gimuy]*/g);
-        if (regexMatches) {
-          for (const regexStr of regexMatches) {
+        // Better regex pattern detection that avoids false positives
+        // Look for patterns that are likely to be actual regex literals
+        const potentialRegexMatches = codeToValidate.match(/(?<!\/\*[^*]*)\/((?:[^\/\\\n]|\\.)*)\/([gimuy]*)/g);
+        
+        if (potentialRegexMatches) {
+          for (const regexStr of potentialRegexMatches) {
+            // Skip if this appears to be part of a comment
+            const beforeMatch = codeToValidate.substring(0, codeToValidate.indexOf(regexStr));
+            const lastCommentStart = Math.max(beforeMatch.lastIndexOf('/*'), beforeMatch.lastIndexOf('//'));
+            const lastCommentEnd = beforeMatch.lastIndexOf('*/');
+            
+            // Skip if we're inside a comment
+            if (lastCommentStart > lastCommentEnd) {
+              continue;
+            }
+            
             try {
+              // Extract pattern and flags
+              const lastSlash = regexStr.lastIndexOf('/');
+              const pattern = regexStr.slice(1, lastSlash);
+              const flags = regexStr.slice(lastSlash + 1);
+              
               // Test if the regex is valid by creating it
-              new RegExp(regexStr.slice(1, regexStr.lastIndexOf('/')), regexStr.slice(regexStr.lastIndexOf('/') + 1));
+              new RegExp(pattern, flags);
             } catch (regexError) {
-              throw new Error(`Invalid regular expression found: ${regexStr} - ${regexError.message}`);
+              // Only throw error if this looks like an actual regex (not in comments)
+              if (!regexStr.includes('─') && !regexStr.includes('*')) {
+                throw new Error(`Invalid regular expression found: ${regexStr} - ${regexError.message}`);
+              }
             }
           }
         }
