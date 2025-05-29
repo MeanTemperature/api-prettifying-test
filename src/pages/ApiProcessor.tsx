@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,25 +9,51 @@ import { useToast } from "@/hooks/use-toast";
 
 const ApiProcessor = () => {
   const [step1Data, setStep1Data] = useState('');
-  const [step2Function, setStep2Function] = useState(`// Modified function to work with HTML string data
-function extract2CodeBlocks(htmlData) {
-  // Create a DOM parser to work with the HTML string
+  const [step2Function, setStep2Function] = useState(`function extract2CodeBlocksFromHtml(htmlString) {
+  // Parse the HTML string into a document
   const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlData, 'text/html');
+  const doc = parser.parseFromString(htmlString, 'text/html');
+
+  console.log('=== DEBUGGING SELECTORS ===');
   
+  // Let's try different selectors to see what exists
+  const allCodeSpaceBlocks = Array.from(doc.querySelectorAll('[class*="code-space-block"]'));
+  console.log('All elements with code-space-block in class:', allCodeSpaceBlocks.length);
+  
+  const allDepthElements = Array.from(doc.querySelectorAll('[class*="depth-"]'));
+  console.log('All elements with depth- in class:', allDepthElements.length);
+  
+  const allContentsElements = Array.from(doc.querySelectorAll('[class*="contents"]'));
+  console.log('All elements with contents in class:', allContentsElements.length);
+  
+  // Try the original selector
   const blocks = Array.from(doc.querySelectorAll('.code-space-block__contents.depth-0, .code-space-block__contents.depth-1, .code-space-block__contents.depth-2'));
+  console.log('Original selector found blocks:', blocks.length);
+  
+  // Try a broader selector
+  const broadBlocks = Array.from(doc.querySelectorAll('.code-space-block__contents'));
+  console.log('Broader selector (.code-space-block__contents) found:', broadBlocks.length);
+  
+  // Try even broader
+  const veryBroadBlocks = Array.from(doc.querySelectorAll('[class*="code-space-block__contents"]'));
+  console.log('Very broad selector found:', veryBroadBlocks.length);
+  
+  // Log some class names we find
+  if (allCodeSpaceBlocks.length > 0) {
+    console.log('Sample class names found:');
+    allCodeSpaceBlocks.slice(0, 5).forEach((el, i) => {
+      console.log(\`Element \${i}: \${el.className}\`);
+    });
+  }
   
   function extractBlock(blockElem, depth = 0) {
     let result = '';
 
-    // Get command/action label (e.g., "create variable", "forward", etc.)
     const cmdElem = blockElem.querySelector('.code-space-block__contents__row__command .code-space-display.block, .code-space-block__contents__row__command .code-space-display.block.command');
     let line = cmdElem ? cmdElem.innerText.trim() : '';
 
-    // Get all input values for this block (e.g., variable names, values, properties, etc.)
     const inputRows = blockElem.querySelectorAll('.code-space-block-input__row, .code-space-block-input__row.code-space-block-input__row--last');
     inputRows.forEach(row => {
-      // Editable values (e.g., Side_length, 0.1, numbers)
       const editables = row.querySelectorAll('.code-space-input-element__contenteditable, .code-space-display.identifier, .code-space-display.action, .code-space-display.vartype, .code-space-display.conditional, .code-space-display.property, .code-space-display.assignment');
       editables.forEach(e => {
         const text = e.innerText.trim();
@@ -36,7 +61,6 @@ function extract2CodeBlocks(htmlData) {
           line += ' ' + text;
         }
       });
-      // For input-labels (like "=" or "steps" or "degrees")
       const labels = row.querySelectorAll('.code-space-display.input-label');
       labels.forEach(lab => {
         const text = lab.innerText.trim();
@@ -46,10 +70,8 @@ function extract2CodeBlocks(htmlData) {
       });
     });
 
-    // Add indentation for nesting/structure
     result += '  '.repeat(depth) + line + '\\n';
 
-    // Recurse for any nested children (for blocks like loops, functions, etc.)
     const childBlocks = blockElem.querySelectorAll(':scope > .code-space-block__children.print-display-block > div > .code-space-block__children__child__line > .code-space-block.print-display-block, :scope > .code-space-block__children.print-display-block > .code-space-block__children__child > .code-space-block__children__child__line > .code-space-block.print-display-block');
     childBlocks.forEach(child => {
       result += extractBlock(child, depth + 1);
@@ -59,19 +81,24 @@ function extract2CodeBlocks(htmlData) {
   }
 
   let output = '';
-  blocks.forEach(blockElem => {
-    // Only extract top-level blocks to avoid duplication from nested queries
+  
+  // Use the blocks that were found
+  const blocksToProcess = blocks.length > 0 ? blocks : broadBlocks.length > 0 ? broadBlocks : veryBroadBlocks;
+  console.log('Processing', blocksToProcess.length, 'blocks');
+  
+  blocksToProcess.forEach(blockElem => {
     if (!blockElem.closest('.code-space-block__children__child__line, .code-space-block__children__child')) {
       output += extractBlock(blockElem, 0);
     }
   });
 
   console.log('--- 2Code as plain text ---\\n' + output);
+  console.log('=== END DEBUGGING ===');
   return output;
 }
 
 // Run it with the HTML data
-return extract2CodeBlocks(data);`);
+return extract2CodeBlocksFromHtml(data);`);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
@@ -203,7 +230,7 @@ Current function type: ${typeof processedResult}`);
           <div>
             <h3 className="text-lg font-semibold mb-2">Step 2: Processing Function</h3>
             <p className="text-sm text-gray-600 mb-2">
-              The function has been pre-loaded with a modified version that works with HTML string data using DOMParser.
+              The function has been updated with debugging to help identify which selectors work with your HTML.
             </p>
             <Textarea
               placeholder="Enter your processing function (JavaScript)..."
