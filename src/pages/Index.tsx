@@ -41,43 +41,49 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-shadow duration-200 opacity-60">
+          <Card className="group hover:shadow-lg transition-shadow duration-200">
             <CardHeader>
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
                 <Database className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <CardTitle>JSON Formatter</CardTitle>
               <CardDescription>
-                Pretty-print and validate JSON data (Coming Soon)
+                Pretty-print and validate JSON data with syntax highlighting
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 Format, validate, and beautify JSON data with syntax highlighting.
               </p>
-              <Button className="w-full" disabled>
-                Coming Soon
-              </Button>
+              <Link to="/json-formatter">
+                <Button className="w-full">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Open Tool
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-shadow duration-200 opacity-60">
+          <Card className="group hover:shadow-lg transition-shadow duration-200">
             <CardHeader>
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
                 <Code className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <CardTitle>Text Utilities</CardTitle>
               <CardDescription>
-                Various text processing utilities (Coming Soon)
+                Transform, analyze, and manipulate text data
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 Encode, decode, transform, and analyze text data.
               </p>
-              <Button className="w-full" disabled>
-                Coming Soon
-              </Button>
+              <Link to="/text-utilities">
+                <Button className="w-full">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Open Tool
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
