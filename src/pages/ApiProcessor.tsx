@@ -8,97 +8,65 @@ import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ApiProcessor = () => {
-  const [step1Data, setStep1Data] = useState('');
-  const [step2Function, setStep2Function] = useState(`function extract2CodeBlocksFromHtml(htmlString) {
-  // Parse the HTML string into a document
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
-
-  console.log('=== DEBUGGING SELECTORS ===');
-  
-  // Let's try different selectors to see what exists
-  const allCodeSpaceBlocks = Array.from(doc.querySelectorAll('[class*="code-space-block"]'));
-  console.log('All elements with code-space-block in class:', allCodeSpaceBlocks.length);
-  
-  const allDepthElements = Array.from(doc.querySelectorAll('[class*="depth-"]'));
-  console.log('All elements with depth- in class:', allDepthElements.length);
-  
-  const allContentsElements = Array.from(doc.querySelectorAll('[class*="contents"]'));
-  console.log('All elements with contents in class:', allContentsElements.length);
-  
-  // Try the original selector
-  const blocks = Array.from(doc.querySelectorAll('.code-space-block__contents.depth-0, .code-space-block__contents.depth-1, .code-space-block__contents.depth-2'));
-  console.log('Original selector found blocks:', blocks.length);
-  
-  // Try a broader selector
-  const broadBlocks = Array.from(doc.querySelectorAll('.code-space-block__contents'));
-  console.log('Broader selector (.code-space-block__contents) found:', broadBlocks.length);
-  
-  // Try even broader
-  const veryBroadBlocks = Array.from(doc.querySelectorAll('[class*="code-space-block__contents"]'));
-  console.log('Very broad selector found:', veryBroadBlocks.length);
-  
-  // Log some class names we find
-  if (allCodeSpaceBlocks.length > 0) {
-    console.log('Sample class names found:');
-    allCodeSpaceBlocks.slice(0, 5).forEach((el, i) => {
-      console.log(\`Element \${i}: \${el.className}\`);
-    });
-  }
-  
-  function extractBlock(blockElem, depth = 0) {
-    let result = '';
-
-    const cmdElem = blockElem.querySelector('.code-space-block__contents__row__command .code-space-display.block, .code-space-block__contents__row__command .code-space-display.block.command');
-    let line = cmdElem ? cmdElem.innerText.trim() : '';
-
-    const inputRows = blockElem.querySelectorAll('.code-space-block-input__row, .code-space-block-input__row.code-space-block-input__row--last');
-    inputRows.forEach(row => {
-      const editables = row.querySelectorAll('.code-space-input-element__contenteditable, .code-space-display.identifier, .code-space-display.action, .code-space-display.vartype, .code-space-display.conditional, .code-space-display.property, .code-space-display.assignment');
-      editables.forEach(e => {
-        const text = e.innerText.trim();
-        if (text && !line.includes(text)) {
-          line += ' ' + text;
-        }
-      });
-      const labels = row.querySelectorAll('.code-space-display.input-label');
-      labels.forEach(lab => {
-        const text = lab.innerText.trim();
-        if (text && !line.includes(text)) {
-          line += ' ' + text;
-        }
-      });
-    });
-
-    result += '  '.repeat(depth) + line + '\\n';
-
-    const childBlocks = blockElem.querySelectorAll(':scope > .code-space-block__children.print-display-block > div > .code-space-block__children__child__line > .code-space-block.print-display-block, :scope > .code-space-block__children.print-display-block > .code-space-block__children__child > .code-space-block__children__child__line > .code-space-block.print-display-block');
-    childBlocks.forEach(child => {
-      result += extractBlock(child, depth + 1);
-    });
-
-    return result;
-  }
-
-  let output = '';
-  
-  // Use the blocks that were found
-  const blocksToProcess = blocks.length > 0 ? blocks : broadBlocks.length > 0 ? broadBlocks : veryBroadBlocks;
-  console.log('Processing', blocksToProcess.length, 'blocks');
-  
-  blocksToProcess.forEach(blockElem => {
-    if (!blockElem.closest('.code-space-block__children__child__line, .code-space-block__children__child')) {
-      output += extractBlock(blockElem, 0);
+  const [step1Data, setStep1Data] = useState(`{
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "age": 30,
+      "city": "New York",
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "age": 25,
+      "city": "Los Angeles",
+      "isActive": false
+    },
+    {
+      "id": 3,
+      "name": "Bob Johnson",
+      "email": "bob@example.com",
+      "age": 35,
+      "city": "Chicago",
+      "isActive": true
     }
+  ],
+  "metadata": {
+    "total": 3,
+    "page": 1,
+    "limit": 10
+  }
+}`);
+  const [step2Function, setStep2Function] = useState(`function processUserData(jsonData) {
+  // Parse the JSON data
+  const data = JSON.parse(jsonData);
+  
+  // Extract active users only
+  const activeUsers = data.users.filter(user => user.isActive);
+  
+  // Format the output
+  let result = 'Active Users Report:\\n';
+  result += '==================\\n\\n';
+  
+  activeUsers.forEach(user => {
+    result += \`Name: \${user.name}\\n\`;
+    result += \`Email: \${user.email}\\n\`;
+    result += \`Age: \${user.age}\\n\`;
+    result += \`City: \${user.city}\\n\`;
+    result += '---\\n';
   });
-
-  console.log('--- 2Code as plain text ---\\n' + output);
-  console.log('=== END DEBUGGING ===');
-  return output;
+  
+  result += \`\\nTotal active users: \${activeUsers.length}\`;
+  
+  return result;
 }
 
-// Run it with the HTML data
-return extract2CodeBlocksFromHtml(data);`);
+// Process the data
+return processUserData(data);`);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
