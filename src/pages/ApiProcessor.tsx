@@ -8,65 +8,66 @@ import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ApiProcessor = () => {
-  const [step1Data, setStep1Data] = useState(`{
-  "users": [
-    {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com",
-      "age": 30,
-      "city": "New York",
-      "isActive": true
-    },
-    {
-      "id": 2,
-      "name": "Jane Smith",
-      "email": "jane@example.com",
-      "age": 25,
-      "city": "Los Angeles",
-      "isActive": false
-    },
-    {
-      "id": 3,
-      "name": "Bob Johnson",
-      "email": "bob@example.com",
-      "age": 35,
-      "city": "Chicago",
-      "isActive": true
-    }
-  ],
-  "metadata": {
-    "total": 3,
-    "page": 1,
-    "limit": 10
-  }
-}`);
-  const [step2Function, setStep2Function] = useState(`function processUserData(jsonData) {
-  // Parse the JSON data
-  const data = JSON.parse(jsonData);
+  const [step1Data, setStep1Data] = useState(`<html>
+<head><title>User Directory</title></head>
+<body>
+  <div class="user-container">
+    <div class="user-card active" data-id="1">
+      <h2>John Doe</h2>
+      <p class="email">john@example.com</p>
+      <span class="age">30</span>
+      <span class="city">New York</span>
+      <span class="status">Active</span>
+    </div>
+    <div class="user-card inactive" data-id="2">
+      <h2>Jane Smith</h2>
+      <p class="email">jane@example.com</p>
+      <span class="age">25</span>
+      <span class="city">Los Angeles</span>
+      <span class="status">Inactive</span>
+    </div>
+    <div class="user-card active" data-id="3">
+      <h2>Bob Johnson</h2>
+      <p class="email">bob@example.com</p>
+      <span class="age">35</span>
+      <span class="city">Chicago</span>
+      <span class="status">Active</span>
+    </div>
+  </div>
+</body>
+</html>`);
+  const [step2Function, setStep2Function] = useState(`function parseActiveUsers(htmlData) {
+  // Create a DOM parser to work with the HTML
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlData, 'text/html');
   
-  // Extract active users only
-  const activeUsers = data.users.filter(user => user.isActive);
+  // Find all active user cards
+  const activeCards = doc.querySelectorAll('.user-card.active');
   
   // Format the output
   let result = 'Active Users Report:\\n';
   result += '==================\\n\\n';
   
-  activeUsers.forEach(user => {
-    result += \`Name: \${user.name}\\n\`;
-    result += \`Email: \${user.email}\\n\`;
-    result += \`Age: \${user.age}\\n\`;
-    result += \`City: \${user.city}\\n\`;
+  activeCards.forEach(card => {
+    const name = card.querySelector('h2').textContent;
+    const email = card.querySelector('.email').textContent;
+    const age = card.querySelector('.age').textContent;
+    const city = card.querySelector('.city').textContent;
+    
+    result += \`Name: \${name}\\n\`;
+    result += \`Email: \${email}\\n\`;
+    result += \`Age: \${age}\\n\`;
+    result += \`City: \${city}\\n\`;
     result += '---\\n';
   });
   
-  result += \`\\nTotal active users: \${activeUsers.length}\`;
+  result += \`\\nTotal active users: \${activeCards.length}\`;
   
   return result;
 }
 
-// Process the data
-return processUserData(data);`);
+// Process the HTML data
+return parseActiveUsers(data);`);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
@@ -180,9 +181,9 @@ Current function type: ${typeof processedResult}`);
         <CardContent className="space-y-6">
           {/* Step 1: Data Input */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">Step 1: Input Data (HTML)</h3>
+            <h3 className="text-lg font-semibold mb-2">Step 1: Input Data (HTML / JSON)</h3>
             <p className="text-sm text-gray-600 mb-2">
-              Paste your raw HTML data here. For large HTML, you can paste the entire content.
+              Paste your raw HTML or JSON data here. The function will process it using DOM parsing or JSON.parse().
             </p>
             <Textarea
               placeholder="Paste your HTML data here..."
