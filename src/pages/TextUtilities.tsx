@@ -87,6 +87,24 @@ const TextUtilities = () => {
       const numberRegex = /\b\d+(\.\d+)?\b/g;
       const numbers = text.match(numberRegex) || [];
       return numbers.join('\n') || 'No numbers found';
+    },
+    cleanAIText: (text: string) => {
+      return text
+        // Remove zero-width spaces and other invisible characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Replace em dashes and en dashes with regular hyphens
+        .replace(/[—–]/g, '-')
+        // Replace curly quotes with straight quotes
+        .replace(/[""]/g, '"')
+        .replace(/['']/g, "'")
+        // Replace non-breaking spaces with regular spaces
+        .replace(/\u00A0/g, ' ')
+        // Remove other problematic unicode spaces
+        .replace(/[\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+        // Normalize multiple spaces to single space
+        .replace(/\s+/g, ' ')
+        // Trim leading/trailing whitespace
+        .trim();
     }
   };
 
@@ -229,6 +247,14 @@ const TextUtilities = () => {
               
               <TabsContent value="format" className="space-y-3">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <Button
+                    variant={operation === 'cleanAIText' ? 'default' : 'outline'}
+                    onClick={() => setOperation('cleanAIText')}
+                    size="sm"
+                    className="md:col-span-3"
+                  >
+                    Clean AI Text
+                  </Button>
                   <Button
                     variant={operation === 'removeSpaces' ? 'default' : 'outline'}
                     onClick={() => setOperation('removeSpaces')}
